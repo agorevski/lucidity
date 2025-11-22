@@ -1,6 +1,6 @@
 # Heretic: Fully automatic censorship removal for language models
 
-You may read up on Heretic [here]
+[You may read up on Heretic here](https://github.com/p-e-w/heretic/blob/master/README.md)
 
 This is a fork of Heretic that supports running the jobs in AML so that you can use larger GPUs.
 
