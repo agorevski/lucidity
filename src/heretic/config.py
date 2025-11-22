@@ -153,6 +153,36 @@ class Settings(BaseSettings):
         description="Dataset of prompts that tend to result in refusals (used for evaluating model performance).",
     )
 
+    auto_save: bool = Field(
+        default=False,
+        description="Automatically save the top 3 models without interactive prompts (useful for batch/AML jobs).",
+    )
+
+    output_dir: str = Field(
+        default="./outputs",
+        description="Directory where auto-saved models will be stored.",
+    )
+
+    auto_upload_to_hf: bool = Field(
+        default=False,
+        description="Automatically upload the best model to Hugging Face after auto-save completes.",
+    )
+
+    hf_repo_prefix: str | None = Field(
+        default=None,
+        description="Custom repository name prefix for HuggingFace uploads (e.g., 'username/model-name'). If not set, will auto-generate from model name.",
+    )
+
+    hf_token: str | None = Field(
+        default=None,
+        description="Hugging Face access token. If not set, will use cached token or HUGGING_FACE_HUB_TOKEN environment variable.",
+    )
+
+    hf_private: bool = Field(
+        default=False,
+        description="Whether the uploaded HuggingFace repository should be private.",
+    )
+
     # "Model" refers to the Pydantic model of the settings class here,
     # not to the language model. The field must have this exact name.
     model_config = SettingsConfigDict(

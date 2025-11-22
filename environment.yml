@@ -1,0 +1,23 @@
+name: lucidity-aml
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.12
+  - pip
+  - pip:
+      - torch>=2.1.0
+      - torchvision
+      - torchaudio
+      - accelerate>=1.10.0
+      - datasets>=4.0.0
+      - hf-transfer>=0.1.9
+      - huggingface-hub>=0.34.4
+      - optuna>=4.5.0
+      - pydantic-settings>=2.10.1
+      - questionary>=2.1.1
+      - rich>=14.1.0
+      - transformers>=4.55.2
+      - azureml-core>=1.56.0
+      - azure-ai-ml>=1.13.0
+      - azure-identity>=1.15.0

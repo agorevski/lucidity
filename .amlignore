@@ -1,0 +1,85 @@
+# Azure ML Ignore File
+# This file tells Azure ML which files to exclude when uploading code to the cloud.
+# Similar to .gitignore but specifically for Azure ML job submissions.
+
+# Python-generated files
+__pycache__/
+*.py[oc]
+*.pyo
+*.pyd
+build/
+dist/
+wheels/
+*.egg-info
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+.virtualenv/
+
+# Python cache
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+.tox/
+.coverage
+htmlcov/
+
+# Editors and IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Configuration files (use the default or pass explicitly)
+config.toml
+
+# Large model files and checkpoints
+*.bin
+*.safetensors
+*.pt
+*.pth
+*.ckpt
+models/
+checkpoints/
+outputs/
+wandb/
+
+# Documentation and notes
+# *.md  # Commented out - README.md is needed for package installation
+docs/
+*.txt
+
+# Test files
+tests/
+test_*.py
+*_test.py
+
+# Jupyter notebooks (if you have any)
+*.ipynb
+.ipynb_checkpoints/
+
+# Large data files
+*.csv
+*.parquet
+*.json
+data/
+datasets/
+
+# Logs
+*.log
+logs/
+
+# Azure ML specific
+.azureml/
+azureml-logs/

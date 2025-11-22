@@ -89,3 +89,18 @@ column = "text"
 dataset = "mlabonne/harmful_behaviors"
 split = "test[:100]"
 column = "text"
+
+# Automatically save the top 3 models without interactive prompts (useful for batch/AML jobs).
+auto_save = false
+
+# Directory where auto-saved models will be stored.
+output_dir = "./outputs"
+
+# Automatically upload the best model to Hugging Face after auto-save completes.
+auto_upload_to_hf = false
+
+# Hugging Face access token. If not set, will use cached token or HUGGING_FACE_HUB_TOKEN environment variable.
+# hf_token = "hf_..."
+
+# Whether the uploaded HuggingFace repository should be private.
+hf_private = false

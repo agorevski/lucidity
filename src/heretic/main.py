@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2025  Philipp Emanuel Weidmann <pew@worldwidemann.com>
 
+import json
 import math
 import os
 import sys
@@ -390,6 +391,132 @@ def run():
         study.best_trials,
         key=lambda trial: trial.user_attrs["refusals"],
     )
+# Auto-save mode: save top 3 models automatically
+    if settings.auto_save:
+        print("Auto-save mode enabled. Saving top 3 models...")
+        print()
+
+        # Take the top 3 trials (or fewer if less than 3 available)
+        top_trials = best_trials[:min(3, len(best_trials))]
+
+        for idx, trial in enumerate(top_trials, 1):
+            print(f"Saving model {idx}/3 from trial {trial.user_attrs['index']}...")
+            print(f"  Refusals: {trial.user_attrs['refusals']}/{len(evaluator.bad_prompts)}")
+            print(f"  KL divergence: {trial.user_attrs['kl_divergence']:.2f}")
+
+            # Restore model from trial
+            model.reload_model()
+            model.abliterate(
+                refusal_directions,
+                trial.user_attrs["direction_index"],
+                trial.user_attrs["parameters"],
+            )
+
+            # Save to numbered directory
+            save_directory = Path(settings.output_dir) / f"trial_{trial.user_attrs['index']:03d}"
+            save_directory.mkdir(parents=True, exist_ok=True)
+
+            model.model.save_pretrained(save_directory)
+            model.tokenizer.save_pretrained(save_directory)
+
+            # Save trial info
+            trial_info = {
+                "trial_index": trial.user_attrs["index"],
+                "refusals": trial.user_attrs["refusals"],
+                "kl_divergence": trial.user_attrs["kl_divergence"],
+                "direction_index": trial.user_attrs["direction_index"],
+            }
+
+            with open(save_directory / "trial_info.json", "w") as f:
+                json.dump(trial_info, f, indent=2)
+
+            print(f"  Saved to: {save_directory}")
+            print()
+
+        print("[bold green]All models saved successfully![/]")
+
+        # Auto-upload to HuggingFace if enabled
+        if settings.auto_upload_to_hf:
+            print()
+            print("Auto-upload enabled. Uploading best model to Hugging Face...")
+
+            try:
+                # Get authentication token
+                token = settings.hf_token or huggingface_hub.get_token()
+                if not token:
+                    print("[yellow]Warning: No HuggingFace token found. Skipping upload.[/]")
+                    print("[yellow]Set hf_token in config or use 'huggingface-cli login'[/]")
+                    return
+
+                # Authenticate
+                user = huggingface_hub.whoami(token)
+                fullname = user.get("fullname", user.get("name", "unknown user"))
+                print(f"* Logged in as [bold]{fullname}[/]")
+
+                # Get the best trial (first one, already sorted by refusals)
+                best_trial = best_trials[0]
+
+                # Auto-generate from model name
+                model_name = Path(settings.model).name
+                repo_id = f"{user['name']}/{model_name}-heretic"
+
+                print(f"* Uploading to repository: [bold]{repo_id}[/]")
+                print(f"* Best trial: {best_trial.user_attrs['index']} (Refusals: {best_trial.user_attrs['refusals']}/{len(evaluator.bad_prompts)}, KL divergence: {best_trial.user_attrs['kl_divergence']:.2f})")
+
+                # Restore the best model
+                model.reload_model()
+                model.abliterate(
+                    refusal_directions,
+                    best_trial.user_attrs["direction_index"],
+                    best_trial.user_attrs["parameters"],
+                )
+
+                # Upload model and tokenizer
+                print("* Uploading model...")
+                model.model.push_to_hub(
+                    repo_id,
+                    private=settings.hf_private,
+                    token=token,
+                )
+
+                print("* Uploading tokenizer...")
+                model.tokenizer.push_to_hub(
+                    repo_id,
+                    private=settings.hf_private,
+                    token=token,
+                )
+
+                # Upload model card if source is from HuggingFace Hub
+                if not Path(settings.model).exists():
+                    print("* Creating model card...")
+                    try:
+                        card = ModelCard.load(settings.model)
+                        if card.data is None:
+                            card.data = ModelCardData()
+                        if card.data.tags is None:
+                            card.data.tags = []
+                        card.data.tags.extend(["heretic", "uncensored", "decensored", "abliterated"])
+                        card.text = (
+                            get_readme_intro(
+                                settings,
+                                best_trial,
+                                evaluator.base_refusals,
+                                evaluator.bad_prompts,
+                            )
+                            + card.text
+                        )
+                        card.push_to_hub(repo_id, token=token)
+                        print("* Model card updated")
+                    except Exception as card_error:
+                        print(f"[yellow]Warning: Could not update model card: {card_error}[/]")
+
+                print(f"[bold green]Model successfully uploaded to {repo_id}![/]")
+
+            except Exception as error:
+                print(f"[red]Error uploading to HuggingFace: {error}[/]")
+                print("[yellow]Models are still saved locally in the output directory.[/]")
+
+       return
 
     choices = [
         Choice(

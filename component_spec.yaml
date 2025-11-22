@@ -1,0 +1,66 @@
+$schema: https://azuremlschemas.azureedge.net/latest/commandComponent.schema.json
+type: command
+
+name: lucidity
+version: 1
+display_name: lucidity
+description: |
+  This component runs heretic abliteration on a specified language model.
+  It performs optimization trials to remove refusal behaviors and automatically
+  saves the top 3 optimized models to the output directory.
+
+inputs:
+
+  model:
+    type: string
+    description: Hugging Face model ID or path (e.g., 'meta-llama/Llama-2-7b-hf')
+
+  hf_token:
+    type: string
+    description: Hugging Face authentication token with access to the model
+    optional: true
+
+  n_trials:
+    type: integer
+    description: Number of optimization trials to run
+    default: 200
+    optional: true
+
+  n_startup_trials:
+    type: integer
+    description: Number of random startup trials for exploration
+    default: 60
+    optional: true
+
+  batch_size:
+    type: integer
+    description: Batch size for processing (0 = auto)
+    default: 0
+    optional: true
+
+  max_batch_size:
+    type: integer
+    description: Maximum batch size to try during auto-detection
+    default: 128
+    optional: true
+
+outputs:
+  model_outputs:
+    type: uri_folder
+    description: Directory containing the top 3 abliterated models with trial metadata
+
+code: .
+
+environment:
+  conda_file: environment.yml
+  image: mcr.microsoft.com/azureml/openmpi4.1.0-cuda11.8-cudnn8-ubuntu22.04
+
+command: >-
+  python aml_entry.py
+  --model ${{inputs.model}}
+  $[[--hf-token ${{inputs.hf_token}}]]
+  $[[--n-trials ${{inputs.n_trials}}]]
+  $[[--n-startup-trials ${{inputs.n_startup_trials}}]]
+  $[[--batch-size ${{inputs.batch_size}}]]
+  $[[--max-batch-size ${{inputs.max_batch_size}}]]
+  --output ${{outputs.model_outputs}}
