@@ -17,3 +17,9 @@ wheels/
 
 # Configuration files
 /config.toml
+
+# Test coverage
+.coverage
+coverage.xml
+htmlcov/
+.pytest_cache/
