@@ -31,13 +31,19 @@ print = Console(highlight=False).print
 
 
 def is_notebook() -> bool:
-    # Check for specific environment variables (Colab, Kaggle)
-    # This is necessary because when running as a subprocess (e.g. !heretic),
-    # get_ipython() might not be available or might not reflect the notebook environment.
+    """Detect if the code is running in a Jupyter notebook environment.
+
+    Checks for specific environment variables (Colab, Kaggle) and IPython shell
+    types to determine if running in a notebook context. This is necessary because
+    when running as a subprocess (e.g. !heretic), get_ipython() might not be
+    available or might not reflect the notebook environment.
+
+    Returns:
+        bool: True if running in a notebook environment, False otherwise.
+    """
     if os.getenv("COLAB_GPU") or os.getenv("KAGGLE_KERNEL_RUN_TYPE"):
         return True
 
-    # Check IPython shell type (for library usage)
     try:
         from IPython import get_ipython
 
@@ -58,6 +64,20 @@ def is_notebook() -> bool:
 
 
 def prompt_select(message: str, choices: list[Any], style=None) -> Any:
+    """Display a selection prompt and return the user's choice.
+
+    Adapts to notebook or terminal environments, providing numbered options
+    in notebooks and an interactive selection menu in terminals.
+
+    Args:
+        message: The prompt message to display to the user.
+        choices: A list of choices to present. Can be plain values or
+            questionary.Choice objects.
+        style: Optional questionary style for terminal display.
+
+    Returns:
+        Any: The selected choice value.
+    """
     if is_notebook():
         print()
         print(message)
@@ -91,6 +111,20 @@ def prompt_text(
     unsafe: bool = False,
     qmark: str = "?",
 ) -> str:
+    """Display a text input prompt and return the user's input.
+
+    Adapts to notebook or terminal environments, providing simple input()
+    in notebooks and questionary text input in terminals.
+
+    Args:
+        message: The prompt message to display to the user.
+        default: Default value to use if the user provides no input.
+        unsafe: If True, use unsafe_ask() which doesn't catch KeyboardInterrupt.
+        qmark: The question mark character to display before the message.
+
+    Returns:
+        str: The user's input text, or the default value if empty.
+    """
     if is_notebook():
         print()
         prompt_msg = f"{message} [{default}]: " if default else f"{message}: "
@@ -105,6 +139,19 @@ def prompt_text(
 
 
 def prompt_path(message: str, default: str = "", only_directories: bool = False) -> str:
+    """Display a file/directory path input prompt and return the user's input.
+
+    Adapts to notebook or terminal environments, providing simple input()
+    in notebooks and questionary path input with autocomplete in terminals.
+
+    Args:
+        message: The prompt message to display to the user.
+        default: Default path value to use if the user provides no input.
+        only_directories: If True, only allow directory paths (terminal only).
+
+    Returns:
+        str: The user's input path, or the default value if empty.
+    """
     if is_notebook():
         print()
         prompt_msg = f"{message} [{default}]: " if default else f"{message}: "
@@ -117,6 +164,17 @@ def prompt_path(message: str, default: str = "", only_directories: bool = False)
 
 
 def prompt_password(message: str) -> str:
+    """Display a password input prompt with hidden input.
+
+    Adapts to notebook or terminal environments, using getpass in notebooks
+    and questionary password input in terminals.
+
+    Args:
+        message: The prompt message to display to the user.
+
+    Returns:
+        str: The user's password input.
+    """
     if is_notebook():
         print()
         return getpass.getpass(message)
@@ -125,6 +183,17 @@ def prompt_password(message: str) -> str:
 
 
 def format_duration(seconds: float) -> str:
+    """Format a duration in seconds to a human-readable string.
+
+    Converts seconds to hours/minutes/seconds format, showing only the
+    most significant units needed.
+
+    Args:
+        seconds: The duration in seconds to format.
+
+    Returns:
+        str: A formatted duration string (e.g., "2h 30m", "5m 10s", "45s").
+    """
     seconds = round(seconds)
     hours, seconds = divmod(seconds, 3600)
     minutes, seconds = divmod(seconds, 60)
@@ -138,6 +207,20 @@ def format_duration(seconds: float) -> str:
 
 
 def load_prompts(specification: DatasetSpecification) -> list[str]:
+    """Load prompts from a dataset based on the given specification.
+
+    Supports loading from local directories (including datasets saved with
+    datasets.save_to_disk), HuggingFace repositories, and handles split
+    specifications.
+
+    Args:
+        specification: A DatasetSpecification containing the dataset path,
+            split specification, and column name to extract prompts from.
+
+    Returns:
+        list[str]: A list of prompt strings extracted from the specified
+            dataset column.
+    """
     path = specification.dataset
     split_str = specification.split
     if os.path.isdir(path):
@@ -175,13 +258,28 @@ T = TypeVar("T")
 
 
 def batchify(items: list[T], batch_size: int) -> list[list[T]]:
+    """Split a list into batches of a specified size.
+
+    Args:
+        items: The list of items to split into batches.
+        batch_size: The maximum number of items per batch.
+
+    Returns:
+        list[list[T]]: A list of batches, where each batch is a list of items.
+            The last batch may contain fewer items than batch_size.
+    """
     return [items[i : i + batch_size] for i in range(0, len(items), batch_size)]
 
 
 def empty_cache():
-    # Collecting garbage is not an idempotent operation, and to avoid OOM errors,
-    # gc.collect() has to be called both before and after emptying the backend cache.
-    # See https://github.com/p-e-w/heretic/pull/17 for details.
+    """Clear GPU memory cache and run garbage collection.
+
+    Detects the available accelerator backend (CUDA, XPU, MLU, SDAA, MUSA, or MPS)
+    and empties its cache. Runs garbage collection before and after clearing the
+    cache to avoid OOM errors (gc.collect() is not idempotent).
+
+    See https://github.com/p-e-w/heretic/pull/17 for details.
+    """
     gc.collect()
 
     if torch.cuda.is_available():
@@ -201,6 +299,19 @@ def empty_cache():
 
 
 def get_trial_parameters(trial: Trial) -> dict[str, str]:
+    """Extract and format trial parameters for display.
+
+    Extracts the direction_index and component parameters from an Optuna trial's
+    user attributes and formats them as strings.
+
+    Args:
+        trial: An Optuna Trial object containing user_attrs with direction_index
+            and parameters.
+
+    Returns:
+        dict[str, str]: A dictionary mapping parameter names to their formatted
+            string values.
+    """
     params = {}
 
     direction_index = trial.user_attrs["direction_index"]
@@ -221,6 +332,20 @@ def get_readme_intro(
     base_refusals: int,
     bad_prompts: list[str],
 ) -> str:
+    """Generate the introductory section of a README for an abliterated model.
+
+    Creates a formatted markdown string containing model information, abliteration
+    parameters, and performance metrics comparing the modified model to the original.
+
+    Args:
+        settings: The Settings object containing the model name.
+        trial: An Optuna Trial object with abliteration parameters and metrics.
+        base_refusals: The number of refusals from the original model.
+        bad_prompts: The list of prompts used for refusal testing.
+
+    Returns:
+        str: A formatted markdown string for the README introduction.
+    """
     model_link = f"[{settings.model}](https://huggingface.co/{settings.model})"
 
     return f"""# This is a decensored version of {

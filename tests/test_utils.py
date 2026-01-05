@@ -13,7 +13,11 @@ class TestBatchify:
     """Tests for batchify function"""
 
     def test_batchify_exact_batches(self):
-        """Test batchifying when items divide evenly into batches"""
+        """Test batchifying when items divide evenly into batches.
+
+        Verifies that a list of 12 items is correctly split into 3 batches
+        of 4 items each, with correct values in each batch.
+        """
         items = list(range(12))
         batches = batchify(items, 4)
         assert len(batches) == 3
@@ -22,7 +26,11 @@ class TestBatchify:
         assert batches[2] == [8, 9, 10, 11]
 
     def test_batchify_uneven_batches(self):
-        """Test batchifying when items don't divide evenly"""
+        """Test batchifying when items don't divide evenly.
+
+        Verifies that a list of 10 items with batch size 3 produces 4 batches,
+        where the last batch contains only the remaining item.
+        """
         items = list(range(10))
         batches = batchify(items, 3)
         assert len(batches) == 4
@@ -32,27 +40,42 @@ class TestBatchify:
         assert batches[3] == [9]
 
     def test_batchify_single_batch(self):
-        """Test when batch size is larger than items"""
+        """Test when batch size is larger than items.
+
+        Verifies that when batch size exceeds the number of items,
+        all items are placed in a single batch.
+        """
         items = [1, 2, 3]
         batches = batchify(items, 10)
         assert len(batches) == 1
         assert batches[0] == [1, 2, 3]
 
     def test_batchify_batch_size_one(self):
-        """Test with batch size of 1"""
+        """Test with batch size of 1.
+
+        Verifies that a batch size of 1 creates a separate batch
+        for each individual item.
+        """
         items = [1, 2, 3]
         batches = batchify(items, 1)
         assert len(batches) == 3
         assert all(len(batch) == 1 for batch in batches)
 
     def test_batchify_empty_list(self):
-        """Test batchifying an empty list"""
+        """Test batchifying an empty list.
+
+        Verifies that an empty input list returns an empty list of batches.
+        """
         items = []
         batches = batchify(items, 5)
         assert len(batches) == 0
 
     def test_batchify_preserves_order(self):
-        """Test that batchify preserves item order"""
+        """Test that batchify preserves item order.
+
+        Verifies that when batches are flattened back together,
+        the original order of items is maintained.
+        """
         items = ['a', 'b', 'c', 'd', 'e']
         batches = batchify(items, 2)
         flattened = [item for batch in batches for item in batch]
@@ -63,33 +86,53 @@ class TestFormatDuration:
     """Tests for format_duration function"""
 
     def test_format_seconds_only(self):
-        """Test formatting durations under a minute"""
+        """Test formatting durations under a minute.
+
+        Verifies that durations less than 60 seconds are formatted
+        with only seconds, including proper rounding of decimals.
+        """
         assert format_duration(0) == "0s"
         assert format_duration(15) == "15s"
         assert format_duration(45.7) == "46s"
         assert format_duration(59) == "59s"
 
     def test_format_minutes_and_seconds(self):
-        """Test formatting durations with minutes"""
+        """Test formatting durations with minutes.
+
+        Verifies that durations between 1 minute and 1 hour are
+        formatted with both minutes and seconds components.
+        """
         assert format_duration(60) == "1m 0s"
         assert format_duration(90) == "1m 30s"
         assert format_duration(125) == "2m 5s"
         assert format_duration(3599) == "59m 59s"
 
     def test_format_hours_and_minutes(self):
-        """Test formatting durations with hours"""
+        """Test formatting durations with hours.
+
+        Verifies that durations of 1 hour or more are formatted
+        with hours and minutes, omitting seconds.
+        """
         assert format_duration(3600) == "1h 0m"
         assert format_duration(3660) == "1h 1m"
         assert format_duration(7200) == "2h 0m"
         assert format_duration(5400) == "1h 30m"
 
     def test_format_large_durations(self):
-        """Test formatting very large durations"""
+        """Test formatting very large durations.
+
+        Verifies that durations of 10+ hours are formatted correctly,
+        including a full 24-hour period.
+        """
         assert format_duration(36000) == "10h 0m"
         assert format_duration(86400) == "24h 0m"
 
     def test_format_rounding(self):
-        """Test that seconds are rounded correctly"""
+        """Test that seconds are rounded correctly.
+
+        Verifies that floating-point durations are rounded to the
+        nearest second using standard rounding rules.
+        """
         assert format_duration(60.4) == "1m 0s"
         assert format_duration(60.6) == "1m 1s"
         assert format_duration(59.4) == "59s"
@@ -99,7 +142,11 @@ class TestGetTrialParameters:
     """Tests for get_trial_parameters function"""
 
     def test_get_trial_parameters_with_direction_index(self):
-        """Test extracting trial parameters with direction index"""
+        """Test extracting trial parameters with direction index.
+
+        Verifies that trial parameters are correctly extracted and formatted
+        when a specific direction index is provided in user attributes.
+        """
         mock_trial = Mock()
         mock_trial.user_attrs = {
             "direction_index": 5.75,
@@ -122,7 +169,11 @@ class TestGetTrialParameters:
         assert params["attn.o_proj.min_weight_distance"] == "8.00"
 
     def test_get_trial_parameters_per_layer(self):
-        """Test extracting trial parameters with per-layer direction"""
+        """Test extracting trial parameters with per-layer direction.
+
+        Verifies that when direction_index is None, the output shows
+        'per layer' instead of a numeric value.
+        """
         mock_trial = Mock()
         mock_trial.user_attrs = {
             "direction_index": None,
@@ -142,7 +193,11 @@ class TestGetTrialParameters:
         assert params["mlp.down_proj.max_weight"] == "1.00"
 
     def test_get_trial_parameters_multiple_components(self):
-        """Test extracting parameters for multiple components"""
+        """Test extracting parameters for multiple components.
+
+        Verifies that parameters from multiple model components are
+        correctly extracted and the total parameter count is correct.
+        """
         mock_trial = Mock()
         mock_trial.user_attrs = {
             "direction_index": 7.0,

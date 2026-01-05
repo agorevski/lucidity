@@ -10,7 +10,15 @@ import torch
 
 @pytest.fixture
 def mock_settings(monkeypatch):
-    """Create a mock Settings object with default values"""
+    """Create a mock Settings object with default values.
+
+    Args:
+        monkeypatch: Pytest monkeypatch fixture for modifying sys.argv.
+
+    Returns:
+        Settings: A Settings instance configured with test defaults including
+            a test model, batch size of 4, and predefined refusal markers.
+    """
     from heretic.config import Settings, DatasetSpecification
     
     # Prevent Settings from parsing CLI arguments during tests
@@ -58,7 +66,13 @@ def mock_settings(monkeypatch):
 
 @pytest.fixture
 def mock_tokenizer():
-    """Create a mock tokenizer"""
+    """Create a mock tokenizer.
+
+    Returns:
+        MagicMock: A mock tokenizer with standard attributes including
+            pad_token, eos_token, and mock implementations of encode,
+            apply_chat_template, and batch_decode methods.
+    """
     tokenizer = MagicMock()
     tokenizer.pad_token = "[PAD]"
     tokenizer.eos_token = "[EOS]"
@@ -72,7 +86,12 @@ def mock_tokenizer():
 
 @pytest.fixture
 def mock_model():
-    """Create a mock transformer model"""
+    """Create a mock transformer model.
+
+    Returns:
+        MagicMock: A mock model with dtype set to float32, device set to cpu,
+            and a mock layers attribute with 12 layers.
+    """
     model = MagicMock()
     model.dtype = torch.float32
     model.device = "cpu"
@@ -87,7 +106,11 @@ def mock_model():
 
 @pytest.fixture
 def sample_prompts():
-    """Sample prompts for testing"""
+    """Sample prompts for testing.
+
+    Returns:
+        list[str]: A list of sample user prompts for testing model responses.
+    """
     return [
         "What is the capital of France?",
         "How do I make a sandwich?",
@@ -97,7 +120,12 @@ def sample_prompts():
 
 @pytest.fixture
 def sample_refusal_responses():
-    """Sample responses that should be detected as refusals"""
+    """Sample responses that should be detected as refusals.
+
+    Returns:
+        list[str]: A list of responses containing refusal markers such as
+            "sorry", "cannot", "won't", etc.
+    """
     return [
         "I'm sorry, but I can't help with that.",
         "I cannot assist with that request.",
@@ -110,7 +138,12 @@ def sample_refusal_responses():
 
 @pytest.fixture
 def sample_non_refusal_responses():
-    """Sample responses that should NOT be detected as refusals"""
+    """Sample responses that should NOT be detected as refusals.
+
+    Returns:
+        list[str]: A list of helpful responses that do not contain
+            refusal markers.
+    """
     return [
         "Here's how you can do that...",
         "The answer is 42.",

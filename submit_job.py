@@ -24,7 +24,13 @@ from azure.identity import DefaultAzureCredential
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 def parse_arguments() -> argparse.Namespace:
-    """Parse command line arguments."""
+    """Parse command line arguments for Azure ML job submission.
+
+    Returns:
+        argparse.Namespace: Parsed arguments containing cluster_name, stream,
+            hf_token, model, n_trials, n_startup_trials, batch_size, and
+            max_batch_size.
+    """
     parser = argparse.ArgumentParser(
         description="Submit a lucidity job to Azure ML using the component specification",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -52,6 +58,20 @@ def parse_arguments() -> argparse.Namespace:
     return args
 
 def create_pipeline_job(component_inputs: Dict) -> object:
+    """Create an Azure ML pipeline job for the Lucidity component.
+
+    Args:
+        component_inputs: Dictionary containing pipeline inputs with keys:
+            - hf_token: HuggingFace authentication token.
+            - model: Model name or path.
+            - n_trials: Number of optimization trials.
+            - n_startup_trials: Number of random startup trials.
+            - batch_size: Batch size for processing.
+            - max_batch_size: Maximum batch size for auto-detection.
+
+    Returns:
+        object: Configured pipeline job ready for submission.
+    """
     @dsl.pipeline(display_name = f"Lucidity pipeline")
     def export_optimize_wrapper(hf_token:str, model:str, n_trials:int, n_startup_trials:int, batch_size:int, max_batch_size:int):
         run_lucidity = load_component(source=os.path.join(os.path.dirname(__file__), "component_spec.yaml"))
@@ -72,6 +92,11 @@ def create_pipeline_job(component_inputs: Dict) -> object:
         max_batch_size=component_inputs['max_batch_size'])
    
 def configure_logging() -> None:
+    """Configure logging with console output and suppressed noisy loggers.
+
+    Sets up INFO level logging with timestamp formatting and suppresses
+    verbose logs from azure, urllib3, msrest, and related libraries.
+    """
     log_handlers = []
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.INFO)
@@ -91,6 +116,14 @@ def configure_logging() -> None:
 
    
 def get_credential() -> TokenCredential:
+    """Obtain Azure credentials using DefaultAzureCredential.
+
+    Attempts to authenticate using the default credential chain and
+    validates the credential by requesting a token for Azure management.
+
+    Returns:
+        TokenCredential: Azure credential object if successful, None otherwise.
+    """
     log_key = "get_credential()"
     credential = None
     try:
@@ -104,6 +137,15 @@ def get_credential() -> TokenCredential:
     return credential
 
 def get_ml_client(credential: TokenCredential, cluster_name: str) -> MLClient:
+    """Create and configure an Azure ML client.
+
+    Args:
+        credential: Azure credential for authentication.
+        cluster_name: Name of the compute cluster to validate.
+
+    Returns:
+        MLClient: Configured Azure ML client connected to the workspace.
+    """
     log_key = "get_ml_client()"
     logging.info(f"{log_key}: Getting ML Client for cluster {cluster_name} and retrieving compute")
     ml_client = MLClient.from_config(credential=credential, file_name="ml_client_config.json")
@@ -118,6 +160,19 @@ def submit_job(
     stream_job: bool = True,
     tags: dict = None
 ) -> object:
+    """Submit a pipeline job to Azure ML.
+
+    Args:
+        ml_client: Azure ML client for job submission.
+        pipeline_job: Configured pipeline job to submit.
+        cluster_name: Name of the compute cluster to run the job on.
+        experiment_name: Name of the experiment for grouping jobs.
+        stream_job: Whether to stream job logs to console. Defaults to True.
+        tags: Optional dictionary of tags to attach to the job.
+
+    Returns:
+        object: Submitted job object containing job metadata and status.
+    """
     pipeline_job.settings.default_compute = cluster_name
     pipeline_job.identity = ManagedIdentityConfiguration()
     pipeline_job = ml_client.jobs.create_or_update(

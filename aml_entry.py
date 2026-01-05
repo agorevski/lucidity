@@ -20,6 +20,16 @@ if sys.version_info < (3, 10):
 
 
 def main():
+    """Run lucidity optimization on Azure ML with automatic model saving.
+
+    Parses command-line arguments, sets up the output directory, installs the
+    heretic package in editable mode, and executes the heretic optimization
+    subprocess. On successful completion, lists all saved model directories.
+
+    Raises:
+        SystemExit: If Python version is incompatible, heretic installation
+            fails, or the heretic subprocess exits with a non-zero code.
+    """
     parser = argparse.ArgumentParser(description="Run lucidity on Azure ML with automatic model saving")
     parser.add_argument("--model", type=str, required=True, help="Model name or path (e.g., 'meta-llama/Llama-2-7b-hf')")
     parser.add_argument('--hf-token', type=str, help='HuggingFace token')

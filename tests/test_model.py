@@ -10,7 +10,11 @@ class TestAbliterationParameters:
     """Tests for AbliterationParameters dataclass"""
 
     def test_abliteration_parameters_creation(self):
-        """Test creating AbliterationParameters with all fields"""
+        """Test creating AbliterationParameters with all fields.
+
+        Verifies that an AbliterationParameters instance can be created
+        with all required fields and that the values are correctly stored.
+        """
         params = AbliterationParameters(
             max_weight=1.2,
             max_weight_position=10.0,
@@ -23,7 +27,11 @@ class TestAbliterationParameters:
         assert params.min_weight_distance == 5.0
 
     def test_abliteration_parameters_types(self):
-        """Test that parameters accept float values"""
+        """Test that parameters accept float values.
+
+        Verifies that all AbliterationParameters fields are stored as
+        float instances when float values are provided.
+        """
         params = AbliterationParameters(
             max_weight=1.0,
             max_weight_position=8.5,
@@ -36,7 +44,11 @@ class TestAbliterationParameters:
         assert isinstance(params.min_weight_distance, float)
 
     def test_abliteration_parameters_integer_conversion(self):
-        """Test that integer values are accepted and work correctly"""
+        """Test that integer values are accepted and work correctly.
+
+        Verifies that AbliterationParameters accepts integer values
+        and stores them correctly for use in calculations.
+        """
         params = AbliterationParameters(
             max_weight=1,
             max_weight_position=10,
@@ -48,7 +60,12 @@ class TestAbliterationParameters:
         assert params.max_weight_position == 10
 
     def test_abliteration_parameters_realistic_values(self):
-        """Test with realistic abliteration parameter values"""
+        """Test with realistic abliteration parameter values.
+
+        Verifies that AbliterationParameters works correctly with
+        values that fall within the realistic ranges used in the
+        main.py objective function.
+        """
         # Based on the ranges in main.py's objective function
         params = AbliterationParameters(
             max_weight=1.15,  # Between 0.8 and 1.5
@@ -65,7 +82,14 @@ class TestModelGetChat:
     """Tests for Model.get_chat method"""
 
     def test_get_chat_format(self, mock_settings):
-        """Test that get_chat returns correct chat format"""
+        """Test that get_chat returns correct chat format.
+
+        Verifies that get_chat returns a list with two message dicts
+        containing the system prompt and user prompt in the correct format.
+
+        Args:
+            mock_settings: Pytest fixture providing mock settings object.
+        """
         from unittest.mock import patch
         from heretic.model import Model
         
@@ -84,7 +108,14 @@ class TestModelGetChat:
                 assert chat[1]["content"] == "Test prompt"
 
     def test_get_chat_with_custom_prompt(self, mock_settings):
-        """Test get_chat with different prompts"""
+        """Test get_chat with different prompts.
+
+        Verifies that get_chat correctly handles different user prompts
+        while maintaining the same system message across calls.
+
+        Args:
+            mock_settings: Pytest fixture providing mock settings object.
+        """
         from unittest.mock import patch
         from heretic.model import Model
         
@@ -102,7 +133,14 @@ class TestModelGetChat:
                 assert chat1[0] == chat2[0]
 
     def test_get_chat_preserves_system_prompt(self, mock_settings):
-        """Test that system prompt from settings is used"""
+        """Test that system prompt from settings is used.
+
+        Verifies that the system prompt from the settings object is
+        correctly included in the chat message list.
+
+        Args:
+            mock_settings: Pytest fixture providing mock settings object.
+        """
         from unittest.mock import patch
         from heretic.model import Model
         

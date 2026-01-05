@@ -206,6 +206,21 @@ class Settings(BaseSettings):
         dotenv_settings: PydanticBaseSettingsSource,
         file_secret_settings: PydanticBaseSettingsSource,
     ) -> tuple[PydanticBaseSettingsSource, ...]:
+        """Customize the settings sources for pydantic-settings.
+
+        Adds TOML config file support as an additional settings source.
+
+        Args:
+            settings_cls: The settings class type being configured.
+            init_settings: Settings source for values passed to __init__.
+            env_settings: Settings source for environment variables.
+            dotenv_settings: Settings source for .env files.
+            file_secret_settings: Settings source for secret files.
+
+        Returns:
+            A tuple of settings sources in priority order (highest first),
+            with TOML config as the lowest priority source.
+        """
         return (
             init_settings,
             env_settings,

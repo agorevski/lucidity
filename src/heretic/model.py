@@ -33,6 +33,18 @@ class AbliterationParameters:
 
 class Model:
     def __init__(self, settings: Settings):
+        """Initialize the Model with the given settings.
+
+        Loads and configures a transformer model for causal language modeling.
+        Attempts to load the model with different dtypes until one succeeds.
+
+        Args:
+            settings: Configuration settings including model name, dtypes,
+                device map, and trust_remote_code options.
+
+        Raises:
+            Exception: If the model fails to load with all configured dtypes.
+        """
         self.settings = settings
 
         print()
@@ -94,6 +106,12 @@ class Model:
             )
 
     def reload_model(self):
+        """Reload the model from disk.
+
+        Purges the existing model from memory and reloads it with the same
+        dtype. Useful for resetting the model to its original state after
+        abliteration or other in-place modifications.
+        """
         dtype = self.model.dtype
 
         # Purge existing model object from memory to make space.
@@ -111,6 +129,14 @@ class Model:
             self.trusted_models[self.settings.model] = True
 
     def get_layers(self) -> ModuleList:
+        """Get the transformer layers from the model.
+
+        Handles both multimodal models (which have a nested language_model)
+        and text-only models.
+
+        Returns:
+            The ModuleList containing the transformer layers.
+        """
         # Most multimodal models.
         with suppress(Exception):
             return self.model.model.language_model.layers
@@ -119,6 +145,19 @@ class Model:
         return self.model.model.layers
 
     def get_layer_matrices(self, layer_index: int) -> dict[str, list[Tensor]]:
+        """Get the weight matrices for a specific transformer layer.
+
+        Extracts abliterable weight matrices from the given layer, including
+        attention out-projection and MLP down-projection matrices. Supports
+        various model architectures including dense models and MoE models.
+
+        Args:
+            layer_index: The index of the layer to extract matrices from.
+
+        Returns:
+            A dictionary mapping component names (e.g., 'attn.o_proj',
+            'mlp.down_proj') to lists of weight tensors.
+        """
         layer = self.get_layers()[layer_index]
 
         matrices = {}
@@ -176,6 +215,11 @@ class Model:
         return matrices
 
     def get_abliterable_components(self) -> list[str]:
+        """Get the names of components that can be abliterated.
+
+        Returns:
+            A list of component names (e.g., ['attn.o_proj', 'mlp.down_proj']).
+        """
         return list(self.get_layer_matrices(0).keys())
 
     def abliterate(
@@ -184,6 +228,22 @@ class Model:
         direction_index: float | None,
         parameters: dict[str, AbliterationParameters],
     ):
+        """Apply abliteration to the model's weight matrices.
+
+        Orthogonalizes weight matrices against the refusal direction to remove
+        the model's tendency to refuse certain prompts. The abliteration weight
+        varies by layer based on the provided parameters.
+
+        Args:
+            refusal_directions: Tensor of refusal directions per layer, with
+                shape (num_layers + 1, hidden_size). The first element is for
+                embeddings.
+            direction_index: If provided, interpolates between adjacent refusal
+                directions at this (possibly fractional) layer index. If None,
+                uses per-layer refusal directions.
+            parameters: Dictionary mapping component names to their abliteration
+                parameters (max_weight, position, min_weight, distance).
+        """
         if direction_index is None:
             refusal_direction = None
         else:
@@ -239,6 +299,14 @@ class Model:
                     matrix.sub_(weight * (device_projector @ matrix))
 
     def get_chat(self, prompt: str) -> list[dict[str, str]]:
+        """Create a chat conversation from a user prompt.
+
+        Args:
+            prompt: The user's input message.
+
+        Returns:
+            A list of message dictionaries with system and user roles.
+        """
         return [
             {"role": "system", "content": self.settings.system_prompt},
             {"role": "user", "content": prompt},
@@ -249,6 +317,21 @@ class Model:
         prompts: list[str],
         **kwargs: Any,
     ) -> tuple[BatchEncoding, GenerateOutput | LongTensor]:
+        """Generate model outputs for a batch of prompts.
+
+        Applies the chat template to each prompt and runs generation with
+        greedy decoding for deterministic outputs.
+
+        Args:
+            prompts: List of user prompts to generate responses for.
+            **kwargs: Additional arguments passed to the model's generate method
+                (e.g., max_new_tokens, output_hidden_states).
+
+        Returns:
+            A tuple containing:
+                - The tokenized inputs (BatchEncoding).
+                - The generated outputs (token IDs or GenerateOutput).
+        """
         chats = [self.get_chat(prompt) for prompt in prompts]
 
         chat_prompts: list[str] = self.tokenizer.apply_chat_template(
@@ -272,6 +355,14 @@ class Model:
         )
 
     def get_responses(self, prompts: list[str]) -> list[str]:
+        """Get text responses for a batch of prompts.
+
+        Args:
+            prompts: List of user prompts to generate responses for.
+
+        Returns:
+            List of generated response strings (excluding the input prompts).
+        """
         inputs, outputs = self.generate(
             prompts,
             max_new_tokens=self.settings.max_response_length,
@@ -284,6 +375,17 @@ class Model:
         )
 
     def get_responses_batched(self, prompts: list[str]) -> list[str]:
+        """Get text responses for prompts, processing in batches.
+
+        Splits prompts into batches according to settings.batch_size to
+        manage memory usage.
+
+        Args:
+            prompts: List of user prompts to generate responses for.
+
+        Returns:
+            List of generated response strings for all prompts.
+        """
         responses = []
 
         for batch in batchify(prompts, self.settings.batch_size):
@@ -293,6 +395,18 @@ class Model:
         return responses
 
     def get_residuals(self, prompts: list[str]) -> Tensor:
+        """Get residual stream vectors for a batch of prompts.
+
+        Generates one token and extracts the hidden states at the final
+        position for each prompt and layer.
+
+        Args:
+            prompts: List of user prompts to extract residuals from.
+
+        Returns:
+            Tensor of shape (num_prompts, num_layers + 1, hidden_size)
+            containing the residual vectors, upcast to float32.
+        """
         # We only generate one token, and we return the residual vectors
         # at that token position, for each prompt and layer.
         _, outputs = self.generate(
@@ -319,6 +433,15 @@ class Model:
         return residuals.to(torch.float32)
 
     def get_residuals_batched(self, prompts: list[str]) -> Tensor:
+        """Get residual stream vectors for prompts, processing in batches.
+
+        Args:
+            prompts: List of user prompts to extract residuals from.
+
+        Returns:
+            Tensor of shape (num_prompts, num_layers + 1, hidden_size)
+            containing concatenated residual vectors from all batches.
+        """
         residuals = []
 
         for batch in batchify(prompts, self.settings.batch_size):
@@ -326,9 +449,20 @@ class Model:
 
         return torch.cat(residuals, dim=0)
 
-    # We work with logprobs rather than probabilities for numerical stability
-    # when computing the KL divergence.
     def get_logprobs(self, prompts: list[str]) -> Tensor:
+        """Get log probability distributions over the vocabulary for prompts.
+
+        Generates one token and returns the log-softmax of the logits at that
+        position. Uses log probabilities for numerical stability when computing
+        KL divergence.
+
+        Args:
+            prompts: List of user prompts to get log probabilities for.
+
+        Returns:
+            Tensor of shape (num_prompts, vocab_size) containing log
+            probabilities over the vocabulary for each prompt.
+        """
         # We only generate one token, and we return the (log) probability distributions
         # over the vocabulary at that token position, for each prompt.
         _, outputs = self.generate(
@@ -345,6 +479,15 @@ class Model:
         return F.log_softmax(logits, dim=-1)
 
     def get_logprobs_batched(self, prompts: list[str]) -> Tensor:
+        """Get log probability distributions for prompts, processing in batches.
+
+        Args:
+            prompts: List of user prompts to get log probabilities for.
+
+        Returns:
+            Tensor of shape (num_prompts, vocab_size) containing concatenated
+            log probabilities from all batches.
+        """
         logprobs = []
 
         for batch in batchify(prompts, self.settings.batch_size):
@@ -353,6 +496,17 @@ class Model:
         return torch.cat(logprobs, dim=0)
 
     def stream_chat_response(self, chat: list[dict[str, str]]) -> str:
+        """Stream a chat response to the console and return it.
+
+        Generates a response for the given chat conversation, streaming
+        tokens to stdout as they are generated.
+
+        Args:
+            chat: List of message dictionaries with 'role' and 'content' keys.
+
+        Returns:
+            The complete generated response as a string.
+        """
         chat_prompt: str = self.tokenizer.apply_chat_template(
             chat,
             add_generation_prompt=True,

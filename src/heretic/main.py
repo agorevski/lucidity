@@ -51,6 +51,20 @@ from .utils import (
 
 
 def run():
+    """Run the main Heretic LLM abliteration optimization workflow.
+
+    This function orchestrates the entire abliteration process including:
+    - Loading and configuring the model
+    - Loading good and bad prompt datasets
+    - Determining optimal batch size
+    - Calculating per-layer refusal directions
+    - Running Optuna optimization trials
+    - Providing interactive options to save, upload, or chat with the model
+
+    Raises:
+        ValidationError: If configuration settings are invalid.
+        KeyboardInterrupt: If the user interrupts the process.
+    """
     # Enable expandable segments to reduce memory fragmentation on multi-GPU setups.
     if (
         "PYTORCH_ALLOC_CONF" not in os.environ
@@ -261,6 +275,14 @@ def run():
     start_time = time.perf_counter()
 
     def objective(trial: Trial) -> tuple[float, float]:
+        """Evaluate a single optimization trial for abliteration parameters.
+
+        Args:
+            trial: The Optuna trial object containing hyperparameter suggestions.
+
+        Returns:
+            The evaluation score for the abliterated model.
+        """
         nonlocal trial_index
         trial_index += 1
         trial.set_user_attr("index", trial_index)
@@ -360,6 +382,17 @@ def run():
         return score
 
     def objective_wrapper(trial: Trial) -> tuple[float, float]:
+        """Wrap the objective function with graceful keyboard interrupt handling.
+
+        Args:
+            trial: The Optuna trial object to evaluate.
+
+        Returns:
+            The result from the objective function.
+
+        Raises:
+            TrialPruned: If the user interrupts with Ctrl+C.
+        """
         try:
             return objective(trial)
         except KeyboardInterrupt:
@@ -712,6 +745,12 @@ def run():
 
 
 def main():
+    """Entry point for the Heretic LLM command-line application.
+
+    Installs the Rich traceback handler for enhanced error display and
+    runs the main workflow. Handles KeyboardInterrupt gracefully to allow
+    clean shutdown.
+    """
     # Install Rich traceback handler.
     install()
 

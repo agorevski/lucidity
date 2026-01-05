@@ -10,7 +10,12 @@ class TestEvaluatorRefusalDetection:
     """Tests for refusal detection in Evaluator"""
 
     def test_is_refusal_with_sorry(self, mock_settings, sample_refusal_responses):
-        """Test refusal detection with 'sorry' marker"""
+        """Test refusal detection with 'sorry' marker.
+
+        Args:
+            mock_settings: Fixture providing mock settings configuration.
+            sample_refusal_responses: Fixture providing sample refusal response strings.
+        """
         from heretic.evaluator import Evaluator
         from heretic.model import Model
         
@@ -24,7 +29,11 @@ class TestEvaluatorRefusalDetection:
             assert evaluator.is_refusal("Sorry, I cannot assist.")
 
     def test_is_refusal_case_insensitive(self, mock_settings):
-        """Test that refusal detection is case insensitive"""
+        """Test that refusal detection is case insensitive.
+
+        Args:
+            mock_settings: Fixture providing mock settings configuration.
+        """
         from heretic.evaluator import Evaluator
         from heretic.model import Model
         
@@ -39,7 +48,11 @@ class TestEvaluatorRefusalDetection:
             assert evaluator.is_refusal("I'm SoRrY, i CaN't Do ThAt")
 
     def test_is_refusal_with_emphasis_removal(self, mock_settings):
-        """Test that emphasis markers are removed before checking"""
+        """Test that emphasis markers are removed before checking.
+
+        Args:
+            mock_settings: Fixture providing mock settings configuration.
+        """
         from heretic.evaluator import Evaluator
         from heretic.model import Model
         
@@ -53,7 +66,11 @@ class TestEvaluatorRefusalDetection:
             assert evaluator.is_refusal("I **cannot** assist")
 
     def test_is_refusal_with_apostrophe_normalization(self, mock_settings):
-        """Test that typographic apostrophes are normalized"""
+        """Test that typographic apostrophes are normalized.
+
+        Args:
+            mock_settings: Fixture providing mock settings configuration.
+        """
         from heretic.evaluator import Evaluator
         from heretic.model import Model
         
@@ -69,7 +86,12 @@ class TestEvaluatorRefusalDetection:
             assert evaluator.is_refusal("I can't help with that")
 
     def test_is_refusal_multiple_markers(self, mock_settings, sample_refusal_responses):
-        """Test refusal detection with various markers"""
+        """Test refusal detection with various markers.
+
+        Args:
+            mock_settings: Fixture providing mock settings configuration.
+            sample_refusal_responses: Fixture providing sample refusal response strings.
+        """
         from heretic.evaluator import Evaluator
         from heretic.model import Model
         
@@ -83,7 +105,12 @@ class TestEvaluatorRefusalDetection:
                 assert evaluator.is_refusal(response), f"Failed to detect refusal: {response}"
 
     def test_is_refusal_negative_cases(self, mock_settings, sample_non_refusal_responses):
-        """Test that non-refusals are not detected as refusals"""
+        """Test that non-refusals are not detected as refusals.
+
+        Args:
+            mock_settings: Fixture providing mock settings configuration.
+            sample_non_refusal_responses: Fixture providing sample non-refusal responses.
+        """
         from heretic.evaluator import Evaluator
         from heretic.model import Model
         
@@ -97,7 +124,11 @@ class TestEvaluatorRefusalDetection:
                 assert not evaluator.is_refusal(response), f"False positive refusal: {response}"
 
     def test_is_refusal_with_illegal_marker(self, mock_settings):
-        """Test refusal detection with 'illegal' marker"""
+        """Test refusal detection with 'illegal' marker.
+
+        Args:
+            mock_settings: Fixture providing mock settings configuration.
+        """
         from heretic.evaluator import Evaluator
         from heretic.model import Model
         
@@ -111,7 +142,11 @@ class TestEvaluatorRefusalDetection:
             assert evaluator.is_refusal("This is an illegal request")
 
     def test_is_refusal_with_harmful_marker(self, mock_settings):
-        """Test refusal detection with 'harmful' marker"""
+        """Test refusal detection with 'harmful' marker.
+
+        Args:
+            mock_settings: Fixture providing mock settings configuration.
+        """
         from heretic.evaluator import Evaluator
         from heretic.model import Model
         
@@ -125,7 +160,11 @@ class TestEvaluatorRefusalDetection:
             assert evaluator.is_refusal("This request is harmful")
 
     def test_is_refusal_with_ai_identity_markers(self, mock_settings):
-        """Test refusal detection with AI identity markers"""
+        """Test refusal detection with AI identity markers.
+
+        Args:
+            mock_settings: Fixture providing mock settings configuration.
+        """
         from heretic.evaluator import Evaluator
         from heretic.model import Model
         
@@ -147,7 +186,11 @@ class TestEvaluatorRefusalDetection:
             assert evaluator.is_refusal("As an AI assistant, I must decline")
 
     def test_is_refusal_partial_word_match(self, mock_settings):
-        """Test that refusal markers match substrings"""
+        """Test that refusal markers match substrings.
+
+        Args:
+            mock_settings: Fixture providing mock settings configuration.
+        """
         from heretic.evaluator import Evaluator
         from heretic.model import Model
         
@@ -163,7 +206,11 @@ class TestEvaluatorRefusalDetection:
             assert evaluator.is_refusal("This violates the rules")
 
     def test_count_refusals_mocked(self, mock_settings):
-        """Test count_refusals with mocked responses"""
+        """Test count_refusals with mocked responses.
+
+        Args:
+            mock_settings: Fixture providing mock settings configuration.
+        """
         from heretic.evaluator import Evaluator
         from heretic.model import Model
         
